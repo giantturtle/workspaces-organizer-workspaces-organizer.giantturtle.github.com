@@ -79,10 +79,7 @@ let WindowPreview = GObject.registerClass(
         }
 
         _onFocusChanged() {
-            /**if (global.workspace_manager.focus_window === this._window)
-                this.add_style_class_name('active');
-            else
-                this.remove_style_class_name('active');**/
+            
         }
     });
 
@@ -182,7 +179,6 @@ let WorkspaceThumbnail = GObject.registerClass(
                 if (!preview)
                     continue;
 
-                //this.child.set_child_above_sibling(preview, lastPreview);
                 lastPreview = preview;
             }
         }
@@ -433,19 +429,7 @@ export default class TopNotchWorkspaces extends Extension {
     }
 
     disable() {
-        // Set default layout
-        /**global.workspace_manager.override_workspace_layout(
-            Meta.DisplayCorner.TOPLEFT,
-            false,
-            -1,
-            1);**/
-
-        // Restore original workspace switcher
-        /**if (this._origUpdateSwitcher) {
-            WorkspacesView.prototype._updateSwitcher = this._origUpdateSwitcher;
-            this._origUpdateSwitcher = null;
-        }**/
-
+    
         // Destroy workspace indicator
         if (this._indicator) {
             this._indicator.destroy();

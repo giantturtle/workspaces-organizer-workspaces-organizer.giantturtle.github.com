@@ -7,9 +7,35 @@ Fork of Workspace Indicator by fmuellner
 
 
 <p align="center">
-  <img src="https://github.com/giantturtle/saturation-extension-giant.turtle/blob/master/Screenshot%20from%202025-08-26%2015-47-18.png" alt="Screenshot">
+  <img src="https://github.com/giantturtle/workspaces-organizer-workspaces-organizer.giantturtle.github.com/blob/master/Screenshot%20from%202025-10-29%2018-26-50.png" alt="Screenshot">
 </p>
 
 <p align="center">
-  <img src="https://github.com/giantturtle/saturation-extension-giant.turtle/blob/master/screenshot_8148_nYY4Jw3.png" alt="Screenshot Extension settings">
+  <img src="https://github.com/giantturtle/workspaces-organizer-workspaces-organizer.giantturtle.github.com/blob/master/Screenshot%20from%202025-10-29%2018-28-23.png" alt="Screenshot Extension settings">
 </p>
+
+
+To change colors and size of the indicator go to stylesheet.css file and edit it as you want.
+
+For example changing size of workspace boxes:
+
+```css
+.panel-workspace-indicator-box .workspace {
+    /* make workspace thumbnails slightly smaller so more previews fit */
+    width: 70px;
+    height: 28px;
+
+
+.panel-workspace-indicator-box .workspace.active {
+    /* highlight color */
+	background-color: rgba(44, 183, 60, 0.362);
+}
+
+.panel-workspace-indicator-box .workspace {
+        /* outline color, borders */
+
+	border: 2px solid #10421d;
+}
+
+
+You can install it from [Gnome Extensions] 
