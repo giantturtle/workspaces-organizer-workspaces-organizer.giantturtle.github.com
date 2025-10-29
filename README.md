@@ -3,13 +3,13 @@ and give you the ability to switch to another workspace by just scrolling over i
 move opened windows  to a another workspace buy just dragging them to that workspace. 
 Fork of Workspace Indicator by fmuellner
 
-
-
+In combination with Dash to panel extension:
 
 <p align="center">
   <img src="https://github.com/giantturtle/workspaces-organizer-workspaces-organizer.giantturtle.github.com/blob/master/Screenshot%20from%202025-10-29%2018-26-50.png" alt="Screenshot">
 </p>
 
+Default Gnome Shell panel:
 <p align="center">
   <img src="https://github.com/giantturtle/workspaces-organizer-workspaces-organizer.giantturtle.github.com/blob/master/Screenshot%20from%202025-10-29%2018-28-23.png" alt="Screenshot Extension settings">
 </p>
@@ -38,4 +38,4 @@ For example changing size of workspace boxes:
 }
 
 
-You can install it from [Gnome Extensions] 
+You can install it from [Gnome Extensions]  https://extensions.gnome.org/extension/8751/workspaces-organizer/
