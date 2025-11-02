@@ -60,12 +60,13 @@ let WindowPreview = GObject.registerClass(
         }
 
         _updateIcon() {
-            const app = Shell.WindowTracker.get_default().get_window_app(this._window);
-            if (app) {
+            const app = Shell.WindowTracker.get_default().get_window_app(this._window) ||
+                        Shell.AppSystem.get_default().lookup_app(this._window.get_wm_class());
+            if (app && app.get_app_info().get_icon()) {
                 this.set_child(app.create_icon_texture(this.icon_size));
             } else {
                 const icon = new St.Icon({
-                    gicon: this._window.get_gicon(),
+                    gicon: this._window.get_app_icon(),
                     style_class: 'popup-menu-icon'
                 });
                 this.set_child(St.TextureCache.get_default().load_gicon(null, icon, this.icon_size));
@@ -79,10 +80,7 @@ let WindowPreview = GObject.registerClass(
         }
 
         _onFocusChanged() {
-            /**if (global.workspace_manager.focus_window === this._window)
-                this.add_style_class_name('active');
-            else
-                this.remove_style_class_name('active');**/
+            
         }
     });
 
@@ -92,14 +90,16 @@ let WorkspaceThumbnail = GObject.registerClass(
         _init(index) {
             super._init({
                 style_class: 'workspace',
-                child: new St.BoxLayout({
-                    style_class: 'workspace-windows',
-                    x_align: Clutter.ActorAlign.CENTER,
-                    y_align: Clutter.ActorAlign.CENTER,
-                }),
                 x_expand: true,
                 y_expand: true,
             });
+
+            this._windowsBox = new St.BoxLayout({
+                style_class: 'workspace-windows',
+                x_align: Clutter.ActorAlign.CENTER,
+                y_align: Clutter.ActorAlign.CENTER,
+            });
+            this.set_child(this._windowsBox);
 
             this.connect('destroy', this._onDestroy.bind(this));
 
@@ -121,7 +121,7 @@ let WorkspaceThumbnail = GObject.registerClass(
                 });
             this._restackedId = global.display.connect('restacked',
                 this._onRestacked.bind(this));
-            this._windowAddedId = global.display.connect('window-created',
+            this._windowCreatedId = global.display.connect('window-created',
                 (display, window) => {
                     if (window.get_workspace() === this._workspace) {
                         this._addWindow(window);
@@ -156,13 +156,20 @@ let WorkspaceThumbnail = GObject.registerClass(
             if (window.skip_taskbar)
                 return;
 
-            let preview = new WindowPreview(window);
-            preview.connect('clicked', () => {
-                this._workspace.activate(global.get_current_time());
-                window.activate(global.get_current_time());
+            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+                if (this._windowPreviews.has(window))
+                    return GLib.SOURCE_REMOVE;
+
+                let preview = new WindowPreview(window);
+                preview.connect('clicked', () => {
+                    this._workspace.activate(global.get_current_time());
+                    window.activate(global.get_current_time());
+                });
+                this._windowPreviews.set(window, preview);
+                this._windowsBox.add_child(preview);
+
+                return GLib.SOURCE_REMOVE;
             });
-            this._windowPreviews.set(window, preview);
-            this.child.add_child(preview);
         }
 
         _removeWindow(window) {
@@ -182,7 +189,6 @@ let WorkspaceThumbnail = GObject.registerClass(
                 if (!preview)
                     continue;
 
-                //this.child.set_child_above_sibling(preview, lastPreview);
                 lastPreview = preview;
             }
         }
@@ -204,7 +210,7 @@ let WorkspaceThumbnail = GObject.registerClass(
             this._workspace.disconnect(this._windowAddedId);
             this._workspace.disconnect(this._windowRemovedId);
             global.display.disconnect(this._restackedId);
-            global.display.disconnect(this._windowAddedId);
+            global.display.disconnect(this._windowCreatedId);
         }
     });
 
