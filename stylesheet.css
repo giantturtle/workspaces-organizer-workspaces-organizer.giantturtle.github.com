@@ -14,7 +14,7 @@
     /* make workspace thumbnails slightly smaller so more previews fit */
     width: 70px;
     height: 28px;
-    background-color: rgba(10, 10, 10, 0.281);
+    background-color: rgba(10, 10, 10, 0.504);
     border-radius: 8px;
 }
 
@@ -66,6 +66,6 @@
 }
 
 .panel-transparency {
-    background-color: rgba(0, 0, 0, 0.40);
+    background-color: rgba(0, 0, 0, 0.428);
 }
 

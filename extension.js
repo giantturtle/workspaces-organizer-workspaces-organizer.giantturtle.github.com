@@ -79,7 +79,10 @@ let WindowPreview = GObject.registerClass(
         }
 
         _onFocusChanged() {
-            
+            /**if (global.workspace_manager.focus_window === this._window)
+                this.add_style_class_name('active');
+            else
+                this.remove_style_class_name('active');**/
         }
     });
 
@@ -179,6 +182,7 @@ let WorkspaceThumbnail = GObject.registerClass(
                 if (!preview)
                     continue;
 
+                //this.child.set_child_above_sibling(preview, lastPreview);
                 lastPreview = preview;
             }
         }
@@ -408,28 +412,14 @@ export default class TopNotchWorkspaces extends Extension {
 
 
     enable() {
-        // Set horizontal layout
-        global.workspace_manager.override_workspace_layout(
-            Meta.DisplayCorner.TOPLEFT,
-            false,
-            1,
-            -1);
-
-        // Store and override the workspace switcher
-        if (!this._origUpdateSwitcher) {
-            this._origUpdateSwitcher = WorkspacesView.prototype._updateSwitcher;
-        }
-        WorkspacesView.prototype._updateSwitcher = function () {
-            this.hide();
-        };
-
+        
         // Workspace indicator in top bar
         this._indicator = new WorkspaceIndicator();
         Main.panel.addToStatusArea('workspace-indicator', this._indicator, 0, 'center');
     }
 
     disable() {
-    
+        
         // Destroy workspace indicator
         if (this._indicator) {
             this._indicator.destroy();
