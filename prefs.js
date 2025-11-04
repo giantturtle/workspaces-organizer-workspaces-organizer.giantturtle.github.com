@@ -5,11 +5,9 @@ import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
-import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
-import Gettext from 'gettext';
+import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
-// Initialize Gettext
-const _ = Gettext.domain('gnome-shell-extensions').gettext;
+// gettext is provided via the prefs module import above
 
 // Schema and Key
 const WORKSPACE_SCHEMA = 'org.gnome.desktop.wm.preferences';

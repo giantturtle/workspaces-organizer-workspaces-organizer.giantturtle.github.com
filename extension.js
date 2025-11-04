@@ -8,7 +8,7 @@ import St from 'gi://St';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
 
-import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
@@ -16,10 +16,7 @@ import { WorkspacesView } from 'resource:///org/gnome/shell/ui/workspacesView.js
 import * as DND from 'resource:///org/gnome/shell/ui/dnd.js';
 import * as SessionMode from 'resource:///org/gnome/shell/ui/sessionMode.js';
 
-import Gettext from 'gettext';
-
-// Initialize Gettext
-const _ = Gettext.domain('gnome-shell-extensions').gettext;
+// gettext is provided via the Extension module import above
 
 // Schema and Key
 const WORKSPACE_SCHEMA = 'org.gnome.desktop.wm.preferences';
@@ -43,8 +40,6 @@ let WindowPreview = GObject.registerClass(
 
             this._updateIcon();
 
-            this.connect('destroy', this._onDestroy.bind(this));
-
             this._focusChangedId = global.workspace_manager.connect('notify::focus-window',
                 this._onFocusChanged.bind(this));
             this._wmClassChangedId = this._window.connect('notify::wm-class',
@@ -65,18 +60,23 @@ let WindowPreview = GObject.registerClass(
             if (app && app.get_app_info().get_icon()) {
                 this.set_child(app.create_icon_texture(this.icon_size));
             } else {
+                let gicon = this._window.get_gicon();
+                if (!gicon) {
+                    gicon = new Gio.ThemedIcon({ name: 'applications-system-symbolic' });
+                }
                 const icon = new St.Icon({
-                    gicon: this._window.get_app_icon(),
+                    gicon: gicon,
                     style_class: 'popup-menu-icon'
                 });
                 this.set_child(St.TextureCache.get_default().load_gicon(null, icon, this.icon_size));
             }
         }
 
-        _onDestroy() {
+        destroy() {
             global.workspace_manager.disconnect(this._focusChangedId);
             this._window.disconnect(this._wmClassChangedId);
             this._window.disconnect(this._mappedId);
+            super.destroy();
         }
 
         _onFocusChanged() {
@@ -101,12 +101,11 @@ let WorkspaceThumbnail = GObject.registerClass(
             });
             this.set_child(this._windowsBox);
 
-            this.connect('destroy', this._onDestroy.bind(this));
-
             this._index = index;
             this._delegate = this; // needed for DND
 
             this._windowPreviews = new Map();
+            this._addWindowTimeoutIds = new Map();
 
             let workspaceManager = global.workspace_manager;
             this._workspace = workspaceManager.get_workspace_by_index(index);
@@ -156,8 +155,17 @@ let WorkspaceThumbnail = GObject.registerClass(
             if (window.skip_taskbar)
                 return;
 
-            GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+            // Ensure we don't leave behind multiple timeouts for the same window
+            if (this._addWindowTimeoutIds.has(window)) {
+                GLib.Source.remove(this._addWindowTimeoutIds.get(window));
+                this._addWindowTimeoutIds.delete(window);
+            }
+            const sourceId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
+                // If already created a preview for this window, stop
                 if (this._windowPreviews.has(window))
+                    return GLib.SOURCE_REMOVE;
+
+                if (!this._windowsBox || !this._windowsBox.get_stage())
                     return GLib.SOURCE_REMOVE;
 
                 let preview = new WindowPreview(window);
@@ -166,16 +174,28 @@ let WorkspaceThumbnail = GObject.registerClass(
                     window.activate(global.get_current_time());
                 });
                 this._windowPreviews.set(window, preview);
-                this._windowsBox.add_child(preview);
+                // Double check container is still valid  before adding
+                if (this._windowsBox && this._windowsBox.get_stage())
+                    this._windowsBox.add_child(preview);
+                else
+                    preview.destroy();
 
+                this._addWindowTimeoutIds.delete(window);
                 return GLib.SOURCE_REMOVE;
             });
+            this._addWindowTimeoutIds.set(window, sourceId);
         }
 
         _removeWindow(window) {
             let preview = this._windowPreviews.get(window);
             if (!preview)
                 return;
+
+            // Remove any pending timeout for this window
+            if (this._addWindowTimeoutIds.has(window)) {
+                GLib.Source.remove(this._addWindowTimeoutIds.get(window));
+                this._addWindowTimeoutIds.delete(window);
+            }
 
             this._windowPreviews.delete(window);
             preview.destroy();
@@ -206,11 +226,25 @@ let WorkspaceThumbnail = GObject.registerClass(
                 ws.activate(global.get_current_time());
         }
 
-        _onDestroy() {
+        // Explicitly cancel main loop sources without destroying the actor
+        cleanupSources() {
+            for (const [, id] of this._addWindowTimeoutIds) {
+                GLib.Source.remove(id);
+            }
+            this._addWindowTimeoutIds.clear();
+        }
+
+        destroy() {
             this._workspace.disconnect(this._windowAddedId);
             this._workspace.disconnect(this._windowRemovedId);
             global.display.disconnect(this._restackedId);
             global.display.disconnect(this._windowCreatedId);
+            // Clear any pending timeouts
+            for (const [, id] of this._addWindowTimeoutIds) {
+                GLib.Source.remove(id);
+            }
+            this._addWindowTimeoutIds.clear();
+            super.destroy();
         }
     });
 
@@ -274,7 +308,10 @@ let WorkspaceIndicator = GObject.registerClass(
                 this._updateMenuLabels.bind(this));
         }
 
-        _onDestroy() {
+        destroy() {
+            this.cleanupSources();
+            this._thumbnailsBox?.destroy();
+            
             for (let i = 0; i < this._workspaceManagerSignals.length; i++)
                 global.workspace_manager.disconnect(this._workspaceManagerSignals[i]);
 
@@ -285,7 +322,7 @@ let WorkspaceIndicator = GObject.registerClass(
 
             Main.panel.set_offscreen_redirect(Clutter.OffscreenRedirect.ALWAYS);
 
-            super._onDestroy();
+            super.destroy();
         }
 
         _onWorkspaceOrientationChanged() {
@@ -381,6 +418,15 @@ let WorkspaceIndicator = GObject.registerClass(
                 this._thumbnailsBox.add_child(thumb);
             }
             this._updateActiveThumbnail();
+        }
+
+        // Explicitly cancel any GLib sources created by thumbnails
+        cleanupSources() {
+            let thumbs = this._thumbnailsBox.get_children();
+            for (let i = 0; i < thumbs.length; i++) {
+                if (typeof thumbs[i].cleanupSources === 'function')
+                    thumbs[i].cleanupSources();
+            }
         }
 
         _activate(index) {

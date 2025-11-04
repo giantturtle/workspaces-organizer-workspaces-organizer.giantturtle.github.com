@@ -1,14 +1,15 @@
 {
     "uuid": "workspaces-organizer@giantturtle.github.com",
-    "settings-schema": "org.gnome.shell.extensions.workspaces-organizer",
     "name": "Workspaces Organizer",
     "description": "Horizontal workspaces indicator, shows opened apps icons in each workspace, and give you the ability to switch to another workspace by just scrolling over it and move opened windows  to a another workspace buy just dragging them to that workspace. Fork of Workspace Indicator by fmuellner. To check for updates and report issues, and see the doccumentation, please visit the extension's GitHub page: https://github.com/giantturtle/workspaces-organizer-workspaces-organizer.giantturtle.github.com",
-     "shell-version": [
-    "45",
+    "shell-version": [
     "46",
     "47",
     "48"
   ],
     "url": "https://github.com/giantturtle/workspaces-organizer-workspaces-organizer.giantturtle.github.com",
-    "version": 3
+    "version": 5,
+    "donations": {
+      "paypal": "MarkoMiskovic"
+  }
 }
